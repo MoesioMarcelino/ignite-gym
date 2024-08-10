@@ -8,7 +8,8 @@ import {
 } from "@gluestack-ui/themed";
 import backgroundImg from "@assets/background.png";
 import Logo from "@assets/logo.svg";
-import { Input, Button, Loading } from "@components";
+import { Input } from "@components/input";
+import { Button } from "@components/button";
 
 export function SignIn() {
   return (
@@ -16,7 +17,7 @@ export function SignIn() {
       contentContainerStyle={{ flexGrow: 1 }}
       showsVerticalScrollIndicator={false}
     >
-      <VStack flex={1} bg="$gray700">
+      <VStack flex={1}>
         <Image
           source={backgroundImg}
           alt="Pessoas treinando"
