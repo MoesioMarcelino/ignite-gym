@@ -11,10 +11,10 @@ import Logo from "@assets/logo.svg";
 import { Input } from "@components/input";
 import { Button } from "@components/button";
 import { useNavigation } from "@react-navigation/native";
-import { NavigationAuthRoutes } from "@routes/public.routes";
+import { NavigationPublicRoutes } from "@routes/public.routes";
 
 export function SignIn() {
-  const navigator = useNavigation<NavigationAuthRoutes>();
+  const navigator = useNavigation<NavigationPublicRoutes>();
 
   function handleNewAccount() {
     navigator.navigate("sign-up");
