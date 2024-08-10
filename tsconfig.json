@@ -6,7 +6,7 @@
       "@dtos/*": ["./src/dtos/*"],
       "@assets/*": ["./src/assets/*"],
       "@components": ["./src/components/index.ts"],
-      "@screens/*": ["./src/screens/*"],
+      "@screens": ["./src/screens/index"],
       "@storage/*": ["./src/storage/*"],
       "@utils/*": ["./src/utils/*"],
       "@services/*": ["./src/services/*"],
