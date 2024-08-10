@@ -5,7 +5,7 @@
     "paths": {
       "@dtos/*": ["./src/dtos/*"],
       "@assets/*": ["./src/assets/*"],
-      "@components/*": ["./src/components/*"],
+      "@components": ["./src/components/index.ts"],
       "@screens/*": ["./src/screens/*"],
       "@storage/*": ["./src/storage/*"],
       "@utils/*": ["./src/utils/*"],
