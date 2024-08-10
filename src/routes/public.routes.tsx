@@ -10,7 +10,8 @@ type PublicRoutesParams = {
   "sign-up": undefined;
 };
 
-export type Routes = NativeStackNavigationProp<PublicRoutesParams>;
+export type NavigationAuthRoutes =
+  NativeStackNavigationProp<PublicRoutesParams>;
 
 const { Navigator, Screen } = createNativeStackNavigator<PublicRoutesParams>();
 
