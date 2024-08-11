@@ -14,14 +14,15 @@ export function HistoryCard() {
       justifyContent="space-between"
       gap="$5"
     >
-      <VStack>
+      <VStack flex={1}>
         <Heading
           color="$white"
           fontSize="$lg"
           textTransform="capitalize"
           fontFamily="$heading"
+          numberOfLines={1}
         >
-          Costas
+          Costass
         </Heading>
 
         <Text color="$gray100" fontSize="$md" numberOfLines={1}>
