@@ -35,7 +35,7 @@ export function PrivateRoutes() {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarActiveTintColor: tokens.colors.green500,
-        tabBarInactiveTintColor: tokens.colors.green200,
+        tabBarInactiveTintColor: tokens.colors.gray200,
         tabBarStyle: {
           backgroundColor: tokens.colors.gray600,
           borderTopWidth: 0,
