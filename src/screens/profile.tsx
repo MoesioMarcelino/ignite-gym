@@ -37,7 +37,7 @@ export function Profile() {
           size: number;
         };
 
-        const sizeBiggerThan5mb = size / 1024 / 1024 > 0.01;
+        const sizeBiggerThan5mb = size / 1024 / 1024 > 5;
 
         if (size && sizeBiggerThan5mb) {
           return toast.show({
