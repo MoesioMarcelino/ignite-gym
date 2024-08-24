@@ -3,14 +3,48 @@ import { Input } from "@components/input";
 import { ProfilePhoto } from "@components/profile-photo";
 import { ScreenHeader } from "@components/screen-header";
 import { Center, Heading, Text, VStack, useToast } from "@gluestack-ui/themed";
-import { Alert, ScrollView, TouchableOpacity } from "react-native";
+import { ScrollView, TouchableOpacity } from "react-native";
 import * as imagePicker from "expo-image-picker";
 import * as fileSystem from "expo-file-system";
 import { useState } from "react";
 import { ToastMessage } from "@components/toast-message";
+import { useForm } from "react-hook-form";
+import * as Yup from "yup";
+import { yupResolver } from "@hookform/resolvers/yup";
+
+type DataFormParams = {
+  name: string;
+  email: string;
+  old_password?: string;
+  new_password?: string;
+  new_password_confirmation?: string;
+};
+
+const formDataSchema = Yup.object({
+  name: Yup.string().required("Campo obrigatório."),
+  email: Yup.string().required("Campo obrigatório."),
+  old_password: Yup.string().min(6, "Mínimo de 6 caracteres"),
+  new_password: Yup.string().min(6, "Mínimo de 6 caracteres"),
+  new_password_confirmation: Yup.string()
+    .min(6, "Mínimo de 6 caracteres")
+    .oneOf([Yup.ref("old_password"), ""], "As senhas digitadas não são iguais"),
+});
 
 export function Profile() {
   const toast = useToast();
+  const {
+    control,
+    formState: { errors, isSubmitting },
+  } = useForm<DataFormParams>({
+    defaultValues: {
+      name: "",
+      email: "moesiomarcelino1@gmail.com",
+      old_password: "",
+      new_password: "",
+      new_password_confirmation: "",
+    },
+    resolver: yupResolver(formDataSchema),
+  });
 
   const [userPhoto, setUserPhoto] = useState(
     "https://github.com/moesiomarcelino.png"
@@ -87,11 +121,19 @@ export function Profile() {
           </TouchableOpacity>
 
           <Center w="$full" gap="$4">
-            <Input placeholder="Nome" bg="$gray600" />
-            <Input
-              value="moesiomarcelino1@gmail.com"
+            <Input<DataFormParams>
+              control={control}
+              name="name"
+              placeholder="Nome"
+              bg="$gray600"
+              error={errors.name?.message}
+            />
+            <Input<DataFormParams>
+              control={control}
+              name="email"
               editable={false}
               bg="$gray600"
+              error={errors.email?.message}
             />
           </Center>
 
@@ -107,9 +149,26 @@ export function Profile() {
           </Heading>
 
           <Center w="$full" gap="$4">
-            <Input placeholder="Senha antiga" bg="$gray600" secureTextEntry />
-            <Input placeholder="Nova senha" bg="$gray600" secureTextEntry />
-            <Input
+            <Input<DataFormParams>
+              control={control}
+              name="old_password"
+              placeholder="Senha antiga"
+              bg="$gray600"
+              secureTextEntry
+              error={errors.old_password?.message}
+            />
+            <Input<DataFormParams>
+              control={control}
+              name="new_password"
+              placeholder="Nova senha"
+              bg="$gray600"
+              secureTextEntry
+              error={errors.new_password?.message}
+            />
+            <Input<DataFormParams>
+              control={control}
+              name="new_password_confirmation"
+              error={errors.new_password_confirmation?.message}
               placeholder="Confirme a nova senha"
               bg="$gray600"
               secureTextEntry
