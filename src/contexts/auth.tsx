@@ -11,8 +11,13 @@ import { api } from "../lib";
 import {
   storageCleanUser,
   storageGetUser,
-  storageUserSave,
+  storageSaveUser,
 } from "@storage/user";
+import {
+  storageCleanToken,
+  storageGetToken,
+  storageSaveToken,
+} from "@storage/token";
 
 type AuthContextProps = {
   user: UserDTO;
@@ -29,6 +34,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoadingStorageUserData, setIsLoadingStorageUserData] =
     useState(true);
 
+  async function updateStorages(user: UserDTO, token: string) {
+    try {
+      setIsLoadingStorageUserData(true);
+      await storageSaveUser(user);
+      await storageSaveToken(token);
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoadingStorageUserData(false);
+    }
+  }
+
+  async function cleanStorages() {
+    try {
+      setIsLoadingStorageUserData(true);
+      await storageCleanUser();
+      await storageCleanToken();
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoadingStorageUserData(false);
+    }
+  }
+
+  function updateUserAndAsignAPIToken(user: UserDTO, token = "") {
+    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    setUser(user);
+  }
+
   async function signIn({
     email,
     password,
@@ -39,20 +73,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { data } = await api.post("/sessions", { email, password });
 
-      if (data.user) {
+      if (data.user && data.token) {
         setUser(data.user);
-        storageUserSave(data.user);
+        updateStorages(data.user, data.token);
       }
     } catch (error) {
       throw error;
     }
   }
 
-  async function loadUser() {
+  async function loadInitialData() {
     try {
       setIsLoadingStorageUserData(true);
       const user = await storageGetUser();
-      setUser(user);
+      const token = await storageGetToken();
+      updateUserAndAsignAPIToken(user, token);
     } catch (error) {
       throw error;
     } finally {
@@ -63,8 +98,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function signOut() {
     try {
       setIsLoadingStorageUserData(true);
-      await storageCleanUser();
-      setUser({} as UserDTO);
+      await cleanStorages();
+      updateUserAndAsignAPIToken({} as UserDTO);
     } catch (error) {
       throw error;
     } finally {
@@ -73,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    loadUser();
+    loadInitialData();
   }, []);
 
   return (
@@ -81,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         signIn,
-        loadUser,
+        loadUser: loadInitialData,
         signOut,
         isLoadingStorageUserData,
       }}
