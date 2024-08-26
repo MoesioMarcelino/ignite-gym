@@ -19,7 +19,6 @@ export function History() {
   async function fetchHistory() {
     try {
       setIsLoadingExercises(true);
-      console.log("passando aqui");
       const { data } = await api.get("/history");
       setExercises(data);
     } catch (err) {
