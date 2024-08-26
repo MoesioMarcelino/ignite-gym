@@ -6,8 +6,9 @@ import {
   Text,
   Image,
   Box,
+  useToast,
 } from "@gluestack-ui/themed";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { PrivateRoutesNavigation } from "@routes/private.routes";
 import { ArrowLeft } from "lucide-react-native";
 import { ScrollView, TouchableOpacity } from "react-native";
@@ -16,12 +17,112 @@ import BodyIcon from "@assets/body.svg";
 import SeriesIcon from "@assets/series.svg";
 import RepetitionsIcon from "@assets/repetitions.svg";
 import { Button } from "@components/button";
+import { useEffect, useState } from "react";
+import { ExerciseDTO } from "@dtos/exercise.dto";
+import { api } from "../lib";
+import { AppError } from "@utils/AppError";
+import { ToastMessage } from "@components/toast-message";
+import { Loading } from "@components/loading";
+
+type RouteParams = {
+  exerciseId: string;
+};
 
 export function Exercise() {
+  const route = useRoute();
   const navigation = useNavigation<PrivateRoutesNavigation>();
+  const toast = useToast();
+
+  const [isLoadingExercise, setIsLoadingExercise] = useState(true);
+  const [isLoadingMarkingExerciseDone, setIsLoadingMarkingExerciseDone] =
+    useState(false);
+  const [exercise, setExercise] = useState<ExerciseDTO>({} as ExerciseDTO);
+
+  const { exerciseId } = route.params as RouteParams;
 
   function handleGoBack() {
     navigation.goBack();
+  }
+
+  async function fetchExerciseById() {
+    try {
+      setIsLoadingExercise(true);
+      const { data } = await api.get(`exercises/${exerciseId}`);
+      setExercise(data);
+    } catch (err) {
+      const isAppError = err instanceof AppError;
+      const title = isAppError
+        ? err.message
+        : "Erro ao entrar. Tente novamente mais tarde";
+
+      toast.show({
+        placement: "top",
+        containerStyle: { paddingTop: 32 },
+
+        render: ({ id }) => (
+          <ToastMessage
+            id={id}
+            title={title}
+            action="error"
+            onClose={() => toast.close(id)}
+          />
+        ),
+      });
+    } finally {
+      setIsLoadingExercise(false);
+    }
+  }
+
+  async function handleMarkExerciseAsDone() {
+    try {
+      setIsLoadingMarkingExerciseDone(true);
+      await api.post(`history`, { exercise_id: exerciseId });
+
+      toast.show({
+        placement: "top",
+        containerStyle: { paddingTop: 32 },
+
+        render: ({ id }) => (
+          <ToastMessage
+            id={id}
+            title="Exercício marcado como realizado com sucesso!"
+            action="success"
+            onClose={() => toast.close(id)}
+          />
+        ),
+      });
+
+      navigation.navigate("history");
+    } catch (err) {
+      const isAppError = err instanceof AppError;
+      const title = isAppError
+        ? err.message
+        : "Erro ao entrar. Tente novamente mais tarde";
+
+      toast.show({
+        placement: "top",
+        containerStyle: { paddingTop: 32 },
+
+        render: ({ id }) => (
+          <ToastMessage
+            id={id}
+            title={title}
+            action="error"
+            onClose={() => toast.close(id)}
+          />
+        ),
+      });
+    } finally {
+      setIsLoadingMarkingExerciseDone(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchExerciseById();
+  }, [exerciseId]);
+
+  if (isLoadingExercise) {
+    return <Loading />;
   }
 
   return (
@@ -43,13 +144,13 @@ export function Exercise() {
             fontSize="$lg"
             flexShrink={1}
           >
-            Puxada frontal
+            {exercise.name}
           </Heading>
           <HStack alignItems="center" gap="$1">
             <BodyIcon />
 
             <Text color="$gray200" textTransform="capitalize">
-              Costas
+              {exercise.group}
             </Text>
           </HStack>
         </HStack>
@@ -60,16 +161,18 @@ export function Exercise() {
         contentContainerStyle={{ paddingBottom: 32 }}
       >
         <VStack p="$8" gap="$3">
-          <Image
-            source={{
-              uri: "https://www.shutterstock.com/image-vector/smiling-grandparents-doing-morning-exercises-600nw-2314906171.jpg",
-            }}
-            alt="Exercise"
-            w="$full"
-            h="$80"
-            rounded="$lg"
-            resizeMode="cover"
-          />
+          <Box rounded="$lg" overflow="hidden">
+            <Image
+              source={{
+                uri: `${api.defaults.baseURL}/exercise/demo/${exercise.demo}`,
+              }}
+              alt="Exercise"
+              w="$full"
+              h="$80"
+              rounded="$lg"
+              resizeMode="cover"
+            />
+          </Box>
 
           <Box bg="$gray600" rounded="$md" pb="$4" px="$4">
             <HStack
@@ -88,7 +191,11 @@ export function Exercise() {
               </HStack>
             </HStack>
 
-            <Button title="Marcar como realizado" />
+            <Button
+              title="Marcar como realizado"
+              onPress={handleMarkExerciseAsDone}
+              isLoading={isLoadingMarkingExerciseDone}
+            />
           </Box>
         </VStack>
       </ScrollView>

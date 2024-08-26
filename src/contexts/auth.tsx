@@ -21,10 +21,10 @@ import {
 
 type AuthContextProps = {
   user: UserDTO;
-  signIn(props: { email: string; password: string }): Promise<void>;
-  loadUser(): void;
-  signOut(): void;
   isLoadingStorageUserData: boolean;
+  signIn(props: { email: string; password: string }): Promise<void>;
+  signOut(): void;
+  updateUser(user: UserDTO): Promise<void>;
 };
 
 export const AuthContext = createContext({} as AuthContextProps);
@@ -34,9 +34,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoadingStorageUserData, setIsLoadingStorageUserData] =
     useState(true);
 
+  async function updateUser(user: UserDTO) {
+    try {
+      setUser(user);
+      await storageSaveUser(user);
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async function updateStorages(user: UserDTO, token: string) {
     try {
-      setIsLoadingStorageUserData(true);
       await storageSaveUser(user);
       await storageSaveToken(token);
     } catch (error) {
@@ -74,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data } = await api.post("/sessions", { email, password });
 
       if (data.user && data.token) {
-        setUser(data.user);
+        updateUserAndAsignAPIToken(data.user, data.token);
         updateStorages(data.user, data.token);
       }
     } catch (error) {
@@ -99,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoadingStorageUserData(true);
       await cleanStorages();
-      updateUserAndAsignAPIToken({} as UserDTO);
+      setUser({} as UserDTO);
     } catch (error) {
       throw error;
     } finally {
@@ -115,10 +123,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        signIn,
-        loadUser: loadInitialData,
-        signOut,
         isLoadingStorageUserData,
+        signIn,
+        updateUser,
+        signOut,
       }}
     >
       {children}

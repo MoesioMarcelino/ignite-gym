@@ -11,44 +11,60 @@ import { ToastMessage } from "@components/toast-message";
 import { useForm } from "react-hook-form";
 import * as Yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
+import { useAuth } from "@hooks/useAuth";
+
+import userProfileDefault from "@assets/userPhotoDefault.png";
+import { AppError } from "@utils/AppError";
+import { api } from "../lib";
+import { UserDTO } from "@dtos/user.dto";
 
 type DataFormParams = {
   name: string;
   email: string;
   old_password?: string;
-  new_password?: string;
-  new_password_confirmation?: string;
+  new_password?: string | null;
+  new_password_confirmation?: string | null;
 };
 
 const formDataSchema = Yup.object({
   name: Yup.string().required("Campo obrigatório."),
   email: Yup.string().required("Campo obrigatório."),
   old_password: Yup.string().min(6, "Mínimo de 6 caracteres"),
-  new_password: Yup.string().min(6, "Mínimo de 6 caracteres"),
-  new_password_confirmation: Yup.string()
+  new_password: Yup.string()
     .min(6, "Mínimo de 6 caracteres")
-    .oneOf([Yup.ref("old_password"), ""], "As senhas digitadas não são iguais"),
+    .nullable()
+    .transform((value) => (!!value ? value : null)),
+  new_password_confirmation: Yup.string()
+    .nullable()
+    .transform((value) => (!!value ? value : null))
+    .oneOf(
+      [Yup.ref("new_password"), null],
+      "As senhas digitadas não são iguais"
+    )
+    .when("new_password", {
+      is: (Field: any) => Field,
+      then: (schema) =>
+        schema
+          .nullable()
+          .required("Campo obrigatório.")
+          .transform((value) => (!!value ? value : null)),
+    }),
 });
 
 export function Profile() {
   const toast = useToast();
+  const { user, updateUser } = useAuth();
   const {
     control,
+    handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<DataFormParams>({
     defaultValues: {
-      name: "",
-      email: "moesiomarcelino1@gmail.com",
-      old_password: "",
-      new_password: "",
-      new_password_confirmation: "",
+      name: user.name,
+      email: user.email,
     },
     resolver: yupResolver(formDataSchema),
   });
-
-  const [userPhoto, setUserPhoto] = useState(
-    "https://github.com/moesiomarcelino.png"
-  );
 
   async function handleUserPhotoSelect() {
     try {
@@ -89,10 +105,100 @@ export function Profile() {
           });
         }
 
-        setUserPhoto(photoSelected.uri);
+        const fileExtension = photoSelected.uri.split(".").pop();
+
+        const photoFile = {
+          name: `${user.name}.${fileExtension}`.toLowerCase(),
+          uri: photoSelected.uri,
+          type: `${photoSelected.type}/${fileExtension}`,
+        } as any;
+
+        const usePhotoUploadForm = new FormData();
+        usePhotoUploadForm.append("avatar", photoFile);
+
+        const { data } = await api.patch<UserDTO>(
+          "/users/avatar",
+          usePhotoUploadForm,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+
+        const updatedUser = user;
+        updatedUser.avatar = data.avatar;
+
+        await updateUser(updatedUser);
+
+        toast.show({
+          placement: "top",
+          containerStyle: { paddingTop: 32 },
+
+          render: ({ id }) => (
+            <ToastMessage
+              id={id}
+              title="Foto de perfil atualizada com sucesso!"
+              action="success"
+              onClose={() => toast.close(id)}
+            />
+          ),
+        });
       }
     } catch (error) {
       console.log(error);
+    }
+  }
+
+  async function handleSubmitProfileData({
+    name,
+    new_password,
+    old_password,
+  }: DataFormParams) {
+    try {
+      await api.put("/users", {
+        name,
+        password: new_password,
+        old_password,
+      });
+
+      const updatedUser = user;
+      updatedUser.name = name;
+
+      await updateUser(updatedUser);
+
+      toast.show({
+        placement: "top",
+        containerStyle: { paddingTop: 32 },
+
+        render: ({ id }) => (
+          <ToastMessage
+            id={id}
+            title="Informações atualizadas com sucesso!"
+            action="success"
+            onClose={() => toast.close(id)}
+          />
+        ),
+      });
+    } catch (err) {
+      const isAppError = err instanceof AppError;
+      const title = isAppError
+        ? err.message
+        : "Erro ao salvar as informações do perfil. Tente novamente mais tarde";
+
+      toast.show({
+        placement: "top",
+        containerStyle: { paddingTop: 32 },
+
+        render: ({ id }) => (
+          <ToastMessage
+            id={id}
+            title={title}
+            action="error"
+            onClose={() => toast.close(id)}
+          />
+        ),
+      });
     }
   }
 
@@ -103,7 +209,11 @@ export function Profile() {
       <ScrollView contentContainerStyle={{ paddingBottom: 36 }}>
         <Center mt="$6" px="$10">
           <ProfilePhoto
-            source={{ uri: userPhoto }}
+            source={
+              user.avatar
+                ? { uri: `${api.defaults.baseURL}/avatar/${user.avatar}` }
+                : userProfileDefault
+            }
             alt="User image"
             size="xl"
           />
@@ -174,7 +284,11 @@ export function Profile() {
               secureTextEntry
             />
 
-            <Button title="Atualizar" />
+            <Button
+              title="Atualizar"
+              isLoading={isSubmitting}
+              onPress={handleSubmit(handleSubmitProfileData)}
+            />
           </Center>
         </Center>
       </ScrollView>

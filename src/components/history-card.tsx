@@ -1,7 +1,11 @@
+import { ExerciseDTO } from "@dtos/exercise.dto";
 import { Text } from "@gluestack-ui/themed";
 import { HStack, Heading, VStack } from "@gluestack-ui/themed";
+import { formateDateTime } from "@utils/formatDateTime";
 
-export function HistoryCard() {
+type HystoryCardProps = { data: ExerciseDTO };
+
+export function HistoryCard({ data }: HystoryCardProps) {
   return (
     <HStack
       w="$full"
@@ -22,16 +26,16 @@ export function HistoryCard() {
           fontFamily="$heading"
           numberOfLines={1}
         >
-          Costass
+          {data.name}
         </Heading>
 
         <Text color="$gray100" fontSize="$md" numberOfLines={1}>
-          Puxada
+          {data.group}
         </Text>
       </VStack>
 
       <Text color="$gray300" fontSize="$md">
-        08:56
+        {formateDateTime(data.created_at)}
       </Text>
     </HStack>
   );

@@ -65,7 +65,7 @@ export function SignUp() {
 
   async function onSubmitForm({ name, email, password }: FormDataParams) {
     try {
-      await api.post("/users", { name, email, password });
+      const { data } = await api.post("/users", { name, email, password });
       signIn({ email, password });
     } catch (error) {
       const isAppError = error instanceof AppError;
